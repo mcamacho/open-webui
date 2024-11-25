@@ -87,6 +87,16 @@ app.state.config.IMAGE_STEPS = IMAGE_STEPS
 
 @app.get("/config")
 async def get_config(request: Request, user=Depends(get_admin_user)):
+    """
+    Get the current configuration for image generation.
+
+    Args:
+        request (Request): The incoming request object.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The current configuration settings.
+    """
     return {
         "enabled": app.state.config.ENABLED,
         "engine": app.state.config.ENGINE,
@@ -138,6 +148,16 @@ class ConfigForm(BaseModel):
 
 @app.post("/config/update")
 async def update_config(form_data: ConfigForm, user=Depends(get_admin_user)):
+    """
+    Update the configuration for image generation.
+
+    Args:
+        form_data (ConfigForm): The new configuration data.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The updated configuration settings.
+    """
     app.state.config.ENGINE = form_data.engine
     app.state.config.ENABLED = form_data.enabled
 
@@ -194,6 +214,12 @@ async def update_config(form_data: ConfigForm, user=Depends(get_admin_user)):
 
 
 def get_automatic1111_api_auth():
+    """
+    Get the authorization header for the AUTOMATIC1111 API.
+
+    Returns:
+        str: The authorization header.
+    """
     if app.state.config.AUTOMATIC1111_API_AUTH is None:
         return ""
     else:
@@ -205,6 +231,15 @@ def get_automatic1111_api_auth():
 
 @app.get("/config/url/verify")
 async def verify_url(user=Depends(get_admin_user)):
+    """
+    Verify the URL for the image generation engine.
+
+    Args:
+        user: The authenticated admin user.
+
+    Returns:
+        bool: True if the URL is valid, False otherwise.
+    """
     if app.state.config.ENGINE == "automatic1111":
         try:
             r = requests.get(
@@ -229,6 +264,15 @@ async def verify_url(user=Depends(get_admin_user)):
 
 
 def set_image_model(model: str):
+    """
+    Set the image model for generation.
+
+    Args:
+        model (str): The model to set.
+
+    Returns:
+        str: The set model.
+    """
     log.info(f"Setting image model to {model}")
     app.state.config.MODEL = model
     if app.state.config.ENGINE in ["", "automatic1111"]:
@@ -249,6 +293,12 @@ def set_image_model(model: str):
 
 
 def get_image_model():
+    """
+    Get the current image model for generation.
+
+    Returns:
+        str: The current image model.
+    """
     if app.state.config.ENGINE == "openai":
         return app.state.config.MODEL if app.state.config.MODEL else "dall-e-2"
     elif app.state.config.ENGINE == "comfyui":
@@ -274,6 +324,15 @@ class ImageConfigForm(BaseModel):
 
 @app.get("/image/config")
 async def get_image_config(user=Depends(get_admin_user)):
+    """
+    Get the current image generation configuration.
+
+    Args:
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The current image generation configuration.
+    """
     return {
         "MODEL": app.state.config.MODEL,
         "IMAGE_SIZE": app.state.config.IMAGE_SIZE,
@@ -283,7 +342,16 @@ async def get_image_config(user=Depends(get_admin_user)):
 
 @app.post("/image/config/update")
 async def update_image_config(form_data: ImageConfigForm, user=Depends(get_admin_user)):
+    """
+    Update the image generation configuration.
 
+    Args:
+        form_data (ImageConfigForm): The new image generation configuration.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The updated image generation configuration.
+    """
     set_image_model(form_data.MODEL)
 
     pattern = r"^\d+x\d+$"
@@ -312,6 +380,15 @@ async def update_image_config(form_data: ImageConfigForm, user=Depends(get_admin
 
 @app.get("/models")
 def get_models(user=Depends(get_verified_user)):
+    """
+    Get the available image generation models.
+
+    Args:
+        user: The authenticated verified user.
+
+    Returns:
+        list: The available image generation models.
+    """
     try:
         if app.state.config.ENGINE == "openai":
             return [
@@ -389,6 +466,15 @@ class GenerateImageForm(BaseModel):
 
 
 def save_b64_image(b64_str):
+    """
+    Save a base64 encoded image to the cache directory.
+
+    Args:
+        b64_str (str): The base64 encoded image string.
+
+    Returns:
+        str: The filename of the saved image.
+    """
     try:
         image_id = str(uuid.uuid4())
 
@@ -421,6 +507,15 @@ def save_b64_image(b64_str):
 
 
 def save_url_image(url):
+    """
+    Save an image from a URL to the cache directory.
+
+    Args:
+        url (str): The URL of the image.
+
+    Returns:
+        str: The filename of the saved image.
+    """
     image_id = str(uuid.uuid4())
     try:
         r = requests.get(url)
@@ -453,6 +548,16 @@ async def image_generations(
     form_data: GenerateImageForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Generate images based on the provided prompt and configuration.
+
+    Args:
+        form_data (GenerateImageForm): The image generation form data.
+        user: The authenticated verified user.
+
+    Returns:
+        list: The generated images.
+    """
     width, height = tuple(map(int, app.state.config.IMAGE_SIZE.split("x")))
 
     r = None

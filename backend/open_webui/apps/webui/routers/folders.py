@@ -40,6 +40,15 @@ router = APIRouter()
 
 @router.get("/", response_model=list[FolderModel])
 async def get_folders(user=Depends(get_verified_user)):
+    """
+    Get a list of folders for the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        list: A list of folders with their associated chats.
+    """
     folders = Folders.get_folders_by_user_id(user.id)
 
     return [
@@ -65,6 +74,16 @@ async def get_folders(user=Depends(get_verified_user)):
 
 @router.post("/")
 def create_folder(form_data: FolderForm, user=Depends(get_verified_user)):
+    """
+    Create a new folder for the authenticated user.
+
+    Args:
+        form_data (FolderForm): The form data containing the folder name.
+        user: The authenticated user.
+
+    Returns:
+        FolderModel: The created folder.
+    """
     folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
         None, user.id, form_data.name
     )
@@ -94,6 +113,16 @@ def create_folder(form_data: FolderForm, user=Depends(get_verified_user)):
 
 @router.get("/{id}", response_model=Optional[FolderModel])
 async def get_folder_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get a folder by its ID for the authenticated user.
+
+    Args:
+        id (str): The ID of the folder.
+        user: The authenticated user.
+
+    Returns:
+        Optional[FolderModel]: The folder if found, otherwise None.
+    """
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         return folder
@@ -113,6 +142,17 @@ async def get_folder_by_id(id: str, user=Depends(get_verified_user)):
 async def update_folder_name_by_id(
     id: str, form_data: FolderForm, user=Depends(get_verified_user)
 ):
+    """
+    Update the name of a folder by its ID for the authenticated user.
+
+    Args:
+        id (str): The ID of the folder.
+        form_data (FolderForm): The form data containing the new folder name.
+        user: The authenticated user.
+
+    Returns:
+        Optional[FolderModel]: The updated folder if successful, otherwise None.
+    """
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         existing_folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
@@ -157,6 +197,17 @@ class FolderParentIdForm(BaseModel):
 async def update_folder_parent_id_by_id(
     id: str, form_data: FolderParentIdForm, user=Depends(get_verified_user)
 ):
+    """
+    Update the parent ID of a folder by its ID for the authenticated user.
+
+    Args:
+        id (str): The ID of the folder.
+        form_data (FolderParentIdForm): The form data containing the new parent ID.
+        user: The authenticated user.
+
+    Returns:
+        Optional[FolderModel]: The updated folder if successful, otherwise None.
+    """
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         existing_folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
@@ -201,6 +252,17 @@ class FolderIsExpandedForm(BaseModel):
 async def update_folder_is_expanded_by_id(
     id: str, form_data: FolderIsExpandedForm, user=Depends(get_verified_user)
 ):
+    """
+    Update the expanded state of a folder by its ID for the authenticated user.
+
+    Args:
+        id (str): The ID of the folder.
+        form_data (FolderIsExpandedForm): The form data containing the new expanded state.
+        user: The authenticated user.
+
+    Returns:
+        Optional[FolderModel]: The updated folder if successful, otherwise None.
+    """
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         try:
@@ -229,6 +291,16 @@ async def update_folder_is_expanded_by_id(
 
 @router.delete("/{id}")
 async def delete_folder_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Delete a folder by its ID for the authenticated user.
+
+    Args:
+        id (str): The ID of the folder.
+        user: The authenticated user.
+
+    Returns:
+        bool: True if the folder was deleted successfully, otherwise False.
+    """
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         try:

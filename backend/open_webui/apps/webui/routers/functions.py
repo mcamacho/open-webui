@@ -23,6 +23,15 @@ router = APIRouter()
 
 @router.get("/", response_model=list[FunctionResponse])
 async def get_functions(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of all functions.
+
+    Args:
+        user: The verified user making the request.
+
+    Returns:
+        A list of FunctionResponse objects.
+    """
     return Functions.get_functions()
 
 
@@ -33,6 +42,15 @@ async def get_functions(user=Depends(get_verified_user)):
 
 @router.get("/export", response_model=list[FunctionModel])
 async def get_functions(user=Depends(get_admin_user)):
+    """
+    Export a list of all functions.
+
+    Args:
+        user: The admin user making the request.
+
+    Returns:
+        A list of FunctionModel objects.
+    """
     return Functions.get_functions()
 
 
@@ -45,6 +63,17 @@ async def get_functions(user=Depends(get_admin_user)):
 async def create_new_function(
     request: Request, form_data: FunctionForm, user=Depends(get_admin_user)
 ):
+    """
+    Create a new function.
+
+    Args:
+        request: The HTTP request object.
+        form_data: The form data for the new function.
+        user: The admin user making the request.
+
+    Returns:
+        The created FunctionResponse object, or raises an HTTPException if an error occurs.
+    """
     if not form_data.id.isidentifier():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -98,6 +127,16 @@ async def create_new_function(
 
 @router.get("/id/{id}", response_model=Optional[FunctionModel])
 async def get_function_by_id(id: str, user=Depends(get_admin_user)):
+    """
+    Retrieve a function by its ID.
+
+    Args:
+        id: The ID of the function.
+        user: The admin user making the request.
+
+    Returns:
+        The FunctionModel object, or raises an HTTPException if not found.
+    """
     function = Functions.get_function_by_id(id)
 
     if function:
@@ -116,6 +155,16 @@ async def get_function_by_id(id: str, user=Depends(get_admin_user)):
 
 @router.post("/id/{id}/toggle", response_model=Optional[FunctionModel])
 async def toggle_function_by_id(id: str, user=Depends(get_admin_user)):
+    """
+    Toggle the active status of a function by its ID.
+
+    Args:
+        id: The ID of the function.
+        user: The admin user making the request.
+
+    Returns:
+        The updated FunctionModel object, or raises an HTTPException if an error occurs.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         function = Functions.update_function_by_id(
@@ -143,6 +192,16 @@ async def toggle_function_by_id(id: str, user=Depends(get_admin_user)):
 
 @router.post("/id/{id}/toggle/global", response_model=Optional[FunctionModel])
 async def toggle_global_by_id(id: str, user=Depends(get_admin_user)):
+    """
+    Toggle the global status of a function by its ID.
+
+    Args:
+        id: The ID of the function.
+        user: The admin user making the request.
+
+    Returns:
+        The updated FunctionModel object, or raises an HTTPException if an error occurs.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         function = Functions.update_function_by_id(
@@ -172,6 +231,18 @@ async def toggle_global_by_id(id: str, user=Depends(get_admin_user)):
 async def update_function_by_id(
     request: Request, id: str, form_data: FunctionForm, user=Depends(get_admin_user)
 ):
+    """
+    Update a function by its ID.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the function.
+        form_data: The form data for the function.
+        user: The admin user making the request.
+
+    Returns:
+        The updated FunctionModel object, or raises an HTTPException if an error occurs.
+    """
     try:
         form_data.content = replace_imports(form_data.content)
         function_module, function_type, frontmatter = load_function_module_by_id(
@@ -211,6 +282,17 @@ async def update_function_by_id(
 async def delete_function_by_id(
     request: Request, id: str, user=Depends(get_admin_user)
 ):
+    """
+    Delete a function by its ID.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the function.
+        user: The admin user making the request.
+
+    Returns:
+        True if the function was deleted, False otherwise.
+    """
     result = Functions.delete_function_by_id(id)
 
     if result:
@@ -228,6 +310,16 @@ async def delete_function_by_id(
 
 @router.get("/id/{id}/valves", response_model=Optional[dict])
 async def get_function_valves_by_id(id: str, user=Depends(get_admin_user)):
+    """
+    Retrieve the valves of a function by its ID.
+
+    Args:
+        id: The ID of the function.
+        user: The admin user making the request.
+
+    Returns:
+        A dictionary of valves, or raises an HTTPException if an error occurs.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         try:
@@ -254,6 +346,17 @@ async def get_function_valves_by_id(id: str, user=Depends(get_admin_user)):
 async def get_function_valves_spec_by_id(
     request: Request, id: str, user=Depends(get_admin_user)
 ):
+    """
+    Retrieve the specification of the valves of a function by its ID.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the function.
+        user: The admin user making the request.
+
+    Returns:
+        A dictionary of the valves specification, or raises an HTTPException if not found.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         if id in request.app.state.FUNCTIONS:
@@ -282,6 +385,18 @@ async def get_function_valves_spec_by_id(
 async def update_function_valves_by_id(
     request: Request, id: str, form_data: dict, user=Depends(get_admin_user)
 ):
+    """
+    Update the valves of a function by its ID.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the function.
+        form_data: The form data for the valves.
+        user: The admin user making the request.
+
+    Returns:
+        A dictionary of the updated valves, or raises an HTTPException if an error occurs.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         if id in request.app.state.FUNCTIONS:
@@ -324,6 +439,16 @@ async def update_function_valves_by_id(
 
 @router.get("/id/{id}/valves/user", response_model=Optional[dict])
 async def get_function_user_valves_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve the user-specific valves of a function by its ID.
+
+    Args:
+        id: The ID of the function.
+        user: The verified user making the request.
+
+    Returns:
+        A dictionary of user-specific valves, or raises an HTTPException if an error occurs.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         try:
@@ -345,6 +470,17 @@ async def get_function_user_valves_by_id(id: str, user=Depends(get_verified_user
 async def get_function_user_valves_spec_by_id(
     request: Request, id: str, user=Depends(get_verified_user)
 ):
+    """
+    Retrieve the specification of the user-specific valves of a function by its ID.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the function.
+        user: The verified user making the request.
+
+    Returns:
+        A dictionary of the user-specific valves specification, or raises an HTTPException if not found.
+    """
     function = Functions.get_function_by_id(id)
     if function:
         if id in request.app.state.FUNCTIONS:
@@ -368,6 +504,18 @@ async def get_function_user_valves_spec_by_id(
 async def update_function_user_valves_by_id(
     request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
 ):
+    """
+    Update the user-specific valves of a function by its ID.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the function.
+        form_data: The form data for the user-specific valves.
+        user: The verified user making the request.
+
+    Returns:
+        A dictionary of the updated user-specific valves, or raises an HTTPException if an error occurs.
+    """
     function = Functions.get_function_by_id(id)
 
     if function:

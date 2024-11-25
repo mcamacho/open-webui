@@ -17,6 +17,15 @@ router = APIRouter()
 
 @router.get("/ef")
 async def get_embeddings(request: Request):
+    """
+    Get embeddings for a sample text.
+
+    Args:
+        request (Request): The HTTP request object.
+
+    Returns:
+        dict: A dictionary containing the embeddings for the sample text.
+    """
     return {"result": request.app.state.EMBEDDING_FUNCTION("hello world")}
 
 
@@ -27,6 +36,15 @@ async def get_embeddings(request: Request):
 
 @router.get("/", response_model=list[MemoryModel])
 async def get_memories(user=Depends(get_verified_user)):
+    """
+    Get memories for the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        list[MemoryModel]: A list of memories for the user.
+    """
     return Memories.get_memories_by_user_id(user.id)
 
 
@@ -36,10 +54,22 @@ async def get_memories(user=Depends(get_verified_user)):
 
 
 class AddMemoryForm(BaseModel):
+    """
+    Form for adding a new memory.
+
+    Attributes:
+        content (str): The content of the memory.
+    """
     content: str
 
 
 class MemoryUpdateModel(BaseModel):
+    """
+    Model for updating a memory.
+
+    Attributes:
+        content (Optional[str]): The updated content of the memory.
+    """
     content: Optional[str] = None
 
 
@@ -49,6 +79,17 @@ async def add_memory(
     form_data: AddMemoryForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Add a new memory for the authenticated user.
+
+    Args:
+        request (Request): The HTTP request object.
+        form_data (AddMemoryForm): The form data containing the memory content.
+        user: The authenticated user.
+
+    Returns:
+        Optional[MemoryModel]: The added memory.
+    """
     memory = Memories.insert_new_memory(user.id, form_data.content)
 
     VECTOR_DB_CLIENT.upsert(
@@ -72,6 +113,13 @@ async def add_memory(
 
 
 class QueryMemoryForm(BaseModel):
+    """
+    Form for querying memories.
+
+    Attributes:
+        content (str): The content to query.
+        k (Optional[int]): The number of results to return.
+    """
     content: str
     k: Optional[int] = 1
 
@@ -80,6 +128,17 @@ class QueryMemoryForm(BaseModel):
 async def query_memory(
     request: Request, form_data: QueryMemoryForm, user=Depends(get_verified_user)
 ):
+    """
+    Query memories for the authenticated user.
+
+    Args:
+        request (Request): The HTTP request object.
+        form_data (QueryMemoryForm): The form data containing the query content.
+        user: The authenticated user.
+
+    Returns:
+        list: The query results.
+    """
     results = VECTOR_DB_CLIENT.search(
         collection_name=f"user-memory-{user.id}",
         vectors=[request.app.state.EMBEDDING_FUNCTION(form_data.content)],
@@ -96,6 +155,16 @@ async def query_memory(
 async def reset_memory_from_vector_db(
     request: Request, user=Depends(get_verified_user)
 ):
+    """
+    Reset memories for the authenticated user from the vector database.
+
+    Args:
+        request (Request): The HTTP request object.
+        user: The authenticated user.
+
+    Returns:
+        bool: True if the reset was successful, False otherwise.
+    """
     VECTOR_DB_CLIENT.delete_collection(f"user-memory-{user.id}")
 
     memories = Memories.get_memories_by_user_id(user.id)
@@ -125,6 +194,15 @@ async def reset_memory_from_vector_db(
 
 @router.delete("/delete/user", response_model=bool)
 async def delete_memory_by_user_id(user=Depends(get_verified_user)):
+    """
+    Delete all memories for the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        bool: True if the deletion was successful, False otherwise.
+    """
     result = Memories.delete_memories_by_user_id(user.id)
 
     if result:
@@ -149,6 +227,18 @@ async def update_memory_by_id(
     form_data: MemoryUpdateModel,
     user=Depends(get_verified_user),
 ):
+    """
+    Update a memory by its ID for the authenticated user.
+
+    Args:
+        memory_id (str): The ID of the memory to update.
+        request (Request): The HTTP request object.
+        form_data (MemoryUpdateModel): The form data containing the updated memory content.
+        user: The authenticated user.
+
+    Returns:
+        Optional[MemoryModel]: The updated memory.
+    """
     memory = Memories.update_memory_by_id(memory_id, form_data.content)
     if memory is None:
         raise HTTPException(status_code=404, detail="Memory not found")
@@ -179,6 +269,16 @@ async def update_memory_by_id(
 
 @router.delete("/{memory_id}", response_model=bool)
 async def delete_memory_by_id(memory_id: str, user=Depends(get_verified_user)):
+    """
+    Delete a memory by its ID for the authenticated user.
+
+    Args:
+        memory_id (str): The ID of the memory to delete.
+        user: The authenticated user.
+
+    Returns:
+        bool: True if the deletion was successful, False otherwise.
+    """
     result = Memories.delete_memory_by_id_and_user_id(memory_id, user.id)
 
     if result:

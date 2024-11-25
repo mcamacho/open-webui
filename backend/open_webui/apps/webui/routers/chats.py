@@ -37,6 +37,16 @@ router = APIRouter()
 async def get_session_user_chat_list(
     user=Depends(get_verified_user), page: Optional[int] = None
 ):
+    """
+    Get a list of chat titles and IDs for the session user.
+
+    Args:
+        user: The verified user.
+        page: Optional page number for pagination.
+
+    Returns:
+        A list of chat titles and IDs.
+    """
     if page is not None:
         limit = 60
         skip = (page - 1) * limit
@@ -53,7 +63,16 @@ async def get_session_user_chat_list(
 
 @router.delete("/", response_model=bool)
 async def delete_all_user_chats(request: Request, user=Depends(get_verified_user)):
+    """
+    Delete all chats for the session user.
 
+    Args:
+        request: The HTTP request object.
+        user: The verified user.
+
+    Returns:
+        A boolean indicating the success of the operation.
+    """
     if user.role == "user" and not has_permission(
         user.id, "chat.delete", request.app.state.config.USER_PERMISSIONS
     ):
@@ -78,6 +97,18 @@ async def get_user_chat_list_by_user_id(
     skip: int = 0,
     limit: int = 50,
 ):
+    """
+    Get a list of chat titles and IDs for a specific user.
+
+    Args:
+        user_id: The ID of the user.
+        user: The admin user.
+        skip: Number of records to skip for pagination.
+        limit: Maximum number of records to return.
+
+    Returns:
+        A list of chat titles and IDs.
+    """
     if not ENABLE_ADMIN_CHAT_ACCESS:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -95,6 +126,16 @@ async def get_user_chat_list_by_user_id(
 
 @router.post("/new", response_model=Optional[ChatResponse])
 async def create_new_chat(form_data: ChatForm, user=Depends(get_verified_user)):
+    """
+    Create a new chat for the session user.
+
+    Args:
+        form_data: The form data for the new chat.
+        user: The verified user.
+
+    Returns:
+        The created chat response.
+    """
     try:
         chat = Chats.insert_new_chat(user.id, form_data)
         return ChatResponse(**chat.model_dump())
@@ -112,6 +153,16 @@ async def create_new_chat(form_data: ChatForm, user=Depends(get_verified_user)):
 
 @router.post("/import", response_model=Optional[ChatResponse])
 async def import_chat(form_data: ChatImportForm, user=Depends(get_verified_user)):
+    """
+    Import a chat for the session user.
+
+    Args:
+        form_data: The form data for the imported chat.
+        user: The verified user.
+
+    Returns:
+        The imported chat response.
+    """
     try:
         chat = Chats.import_chat(user.id, form_data)
         if chat:
@@ -142,6 +193,17 @@ async def import_chat(form_data: ChatImportForm, user=Depends(get_verified_user)
 async def search_user_chats(
     text: str, page: Optional[int] = None, user=Depends(get_verified_user)
 ):
+    """
+    Search for user chats based on a search text.
+
+    Args:
+        text: The search text.
+        page: Optional page number for pagination.
+        user: The verified user.
+
+    Returns:
+        A list of chat titles and IDs matching the search text.
+    """
     if page is None:
         page = 1
 
@@ -174,6 +236,16 @@ async def search_user_chats(
 
 @router.get("/folder/{folder_id}", response_model=list[ChatResponse])
 async def get_chats_by_folder_id(folder_id: str, user=Depends(get_verified_user)):
+    """
+    Get a list of chats by folder ID for the session user.
+
+    Args:
+        folder_id: The ID of the folder.
+        user: The verified user.
+
+    Returns:
+        A list of chats in the specified folder.
+    """
     folder_ids = [folder_id]
     children_folders = Folders.get_children_folders_by_id_and_user_id(
         folder_id, user.id
@@ -194,6 +266,15 @@ async def get_chats_by_folder_id(folder_id: str, user=Depends(get_verified_user)
 
 @router.get("/pinned", response_model=list[ChatResponse])
 async def get_user_pinned_chats(user=Depends(get_verified_user)):
+    """
+    Get a list of pinned chats for the session user.
+
+    Args:
+        user: The verified user.
+
+    Returns:
+        A list of pinned chats.
+    """
     return [
         ChatResponse(**chat.model_dump())
         for chat in Chats.get_pinned_chats_by_user_id(user.id)
@@ -207,6 +288,15 @@ async def get_user_pinned_chats(user=Depends(get_verified_user)):
 
 @router.get("/all", response_model=list[ChatResponse])
 async def get_user_chats(user=Depends(get_verified_user)):
+    """
+    Get a list of all chats for the session user.
+
+    Args:
+        user: The verified user.
+
+    Returns:
+        A list of all chats.
+    """
     return [
         ChatResponse(**chat.model_dump())
         for chat in Chats.get_chats_by_user_id(user.id)
@@ -220,6 +310,15 @@ async def get_user_chats(user=Depends(get_verified_user)):
 
 @router.get("/all/archived", response_model=list[ChatResponse])
 async def get_user_archived_chats(user=Depends(get_verified_user)):
+    """
+    Get a list of archived chats for the session user.
+
+    Args:
+        user: The verified user.
+
+    Returns:
+        A list of archived chats.
+    """
     return [
         ChatResponse(**chat.model_dump())
         for chat in Chats.get_archived_chats_by_user_id(user.id)
@@ -233,6 +332,15 @@ async def get_user_archived_chats(user=Depends(get_verified_user)):
 
 @router.get("/all/tags", response_model=list[TagModel])
 async def get_all_user_tags(user=Depends(get_verified_user)):
+    """
+    Get a list of all tags for the session user.
+
+    Args:
+        user: The verified user.
+
+    Returns:
+        A list of all tags.
+    """
     try:
         tags = Tags.get_tags_by_user_id(user.id)
         return tags
@@ -250,6 +358,15 @@ async def get_all_user_tags(user=Depends(get_verified_user)):
 
 @router.get("/all/db", response_model=list[ChatResponse])
 async def get_all_user_chats_in_db(user=Depends(get_admin_user)):
+    """
+    Get a list of all chats in the database.
+
+    Args:
+        user: The admin user.
+
+    Returns:
+        A list of all chats in the database.
+    """
     if not ENABLE_ADMIN_EXPORT:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -267,6 +384,17 @@ async def get_all_user_chats_in_db(user=Depends(get_admin_user)):
 async def get_archived_session_user_chat_list(
     user=Depends(get_verified_user), skip: int = 0, limit: int = 50
 ):
+    """
+    Get a list of archived chat titles and IDs for the session user.
+
+    Args:
+        user: The verified user.
+        skip: Number of records to skip for pagination.
+        limit: Maximum number of records to return.
+
+    Returns:
+        A list of archived chat titles and IDs.
+    """
     return Chats.get_archived_chat_list_by_user_id(user.id, skip, limit)
 
 
@@ -277,6 +405,15 @@ async def get_archived_session_user_chat_list(
 
 @router.post("/archive/all", response_model=bool)
 async def archive_all_chats(user=Depends(get_verified_user)):
+    """
+    Archive all chats for the session user.
+
+    Args:
+        user: The verified user.
+
+    Returns:
+        A boolean indicating the success of the operation.
+    """
     return Chats.archive_all_chats_by_user_id(user.id)
 
 
@@ -287,6 +424,16 @@ async def archive_all_chats(user=Depends(get_verified_user)):
 
 @router.get("/share/{share_id}", response_model=Optional[ChatResponse])
 async def get_shared_chat_by_id(share_id: str, user=Depends(get_verified_user)):
+    """
+    Get a shared chat by its share ID.
+
+    Args:
+        share_id: The share ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The shared chat response.
+    """
     if user.role == "pending":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
@@ -324,6 +471,16 @@ class TagFilterForm(TagForm):
 async def get_user_chat_list_by_tag_name(
     form_data: TagFilterForm, user=Depends(get_verified_user)
 ):
+    """
+    Get a list of chat titles and IDs by tag name for the session user.
+
+    Args:
+        form_data: The form data containing the tag name.
+        user: The verified user.
+
+    Returns:
+        A list of chat titles and IDs with the specified tag.
+    """
     chats = Chats.get_chat_list_by_user_id_and_tag_name(
         user.id, form_data.name, form_data.skip, form_data.limit
     )
@@ -340,6 +497,16 @@ async def get_user_chat_list_by_tag_name(
 
 @router.get("/{id}", response_model=Optional[ChatResponse])
 async def get_chat_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
 
     if chat:
@@ -360,6 +527,17 @@ async def get_chat_by_id(id: str, user=Depends(get_verified_user)):
 async def update_chat_by_id(
     id: str, form_data: ChatForm, user=Depends(get_verified_user)
 ):
+    """
+    Update a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        form_data: The form data for the updated chat.
+        user: The verified user.
+
+    Returns:
+        The updated chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         updated_chat = {**chat.chat, **form_data.chat}
@@ -379,6 +557,17 @@ async def update_chat_by_id(
 
 @router.delete("/{id}", response_model=bool)
 async def delete_chat_by_id(request: Request, id: str, user=Depends(get_verified_user)):
+    """
+    Delete a chat by its ID for the session user.
+
+    Args:
+        request: The HTTP request object.
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        A boolean indicating the success of the operation.
+    """
     if user.role == "admin":
         chat = Chats.get_chat_by_id(id)
         for tag in chat.meta.get("tags", []):
@@ -413,6 +602,16 @@ async def delete_chat_by_id(request: Request, id: str, user=Depends(get_verified
 
 @router.get("/{id}/pinned", response_model=Optional[bool])
 async def get_pinned_status_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get the pinned status of a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The pinned status of the chat.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         return chat.pinned
@@ -429,6 +628,16 @@ async def get_pinned_status_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/pin", response_model=Optional[ChatResponse])
 async def pin_chat_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Pin a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The pinned chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         chat = Chats.toggle_chat_pinned_by_id(id)
@@ -446,6 +655,16 @@ async def pin_chat_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/clone", response_model=Optional[ChatResponse])
 async def clone_chat_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Clone a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The cloned chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         updated_chat = {
@@ -470,6 +689,16 @@ async def clone_chat_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/archive", response_model=Optional[ChatResponse])
 async def archive_chat_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Archive a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The archived chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         chat = Chats.toggle_chat_archive_by_id(id)
@@ -501,6 +730,16 @@ async def archive_chat_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/share", response_model=Optional[ChatResponse])
 async def share_chat_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Share a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        The shared chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         if chat.share_id:
@@ -529,6 +768,16 @@ async def share_chat_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.delete("/{id}/share", response_model=Optional[bool])
 async def delete_shared_chat_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Delete a shared chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        A boolean indicating the success of the operation.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         if not chat.share_id:
@@ -558,6 +807,17 @@ class ChatFolderIdForm(BaseModel):
 async def update_chat_folder_id_by_id(
     id: str, form_data: ChatFolderIdForm, user=Depends(get_verified_user)
 ):
+    """
+    Update the folder ID of a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        form_data: The form data containing the new folder ID.
+        user: The verified user.
+
+    Returns:
+        The updated chat response.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         chat = Chats.update_chat_folder_id_by_id_and_user_id(
@@ -577,6 +837,16 @@ async def update_chat_folder_id_by_id(
 
 @router.get("/{id}/tags", response_model=list[TagModel])
 async def get_chat_tags_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get a list of tags for a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        A list of tags for the chat.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         tags = chat.meta.get("tags", [])
@@ -596,6 +866,17 @@ async def get_chat_tags_by_id(id: str, user=Depends(get_verified_user)):
 async def add_tag_by_id_and_tag_name(
     id: str, form_data: TagForm, user=Depends(get_verified_user)
 ):
+    """
+    Add a tag to a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        form_data: The form data containing the tag name.
+        user: The verified user.
+
+    Returns:
+        A list of tags for the chat.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         tags = chat.meta.get("tags", [])
@@ -631,6 +912,17 @@ async def add_tag_by_id_and_tag_name(
 async def delete_tag_by_id_and_tag_name(
     id: str, form_data: TagForm, user=Depends(get_verified_user)
 ):
+    """
+    Delete a tag from a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        form_data: The form data containing the tag name.
+        user: The verified user.
+
+    Returns:
+        A list of tags for the chat.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         Chats.delete_tag_by_id_and_user_id_and_tag_name(id, user.id, form_data.name)
@@ -654,6 +946,16 @@ async def delete_tag_by_id_and_tag_name(
 
 @router.delete("/{id}/tags/all", response_model=Optional[bool])
 async def delete_all_tags_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Delete all tags from a chat by its ID for the session user.
+
+    Args:
+        id: The ID of the chat.
+        user: The verified user.
+
+    Returns:
+        A boolean indicating the success of the operation.
+    """
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         Chats.delete_all_tags_by_id_and_user_id(id, user.id)

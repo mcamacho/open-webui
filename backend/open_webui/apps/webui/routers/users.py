@@ -28,6 +28,17 @@ router = APIRouter()
 
 @router.get("/", response_model=list[UserModel])
 async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_user)):
+    """
+    Retrieve a list of users.
+
+    Args:
+        skip (int): The number of users to skip.
+        limit (int): The maximum number of users to return.
+        user: The authenticated admin user.
+
+    Returns:
+        list[UserModel]: A list of user models.
+    """
     return Users.get_users(skip, limit)
 
 
@@ -38,6 +49,15 @@ async def get_users(skip: int = 0, limit: int = 50, user=Depends(get_admin_user)
 
 @router.get("/groups")
 async def get_user_groups(user=Depends(get_verified_user)):
+    """
+    Retrieve the groups of the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        list: A list of user groups.
+    """
     return Users.get_user_groups(user.id)
 
 
@@ -48,6 +68,15 @@ async def get_user_groups(user=Depends(get_verified_user)):
 
 @router.get("/permissions")
 async def get_user_permissisions(user=Depends(get_verified_user)):
+    """
+    Retrieve the permissions of the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        list: A list of user permissions.
+    """
     return Users.get_user_groups(user.id)
 
 
@@ -55,6 +84,15 @@ async def get_user_permissisions(user=Depends(get_verified_user)):
 # User Default Permissions
 ############################
 class WorkspacePermissions(BaseModel):
+    """
+    Represents the workspace permissions for a user.
+
+    Attributes:
+        models (bool): Permission to access models.
+        knowledge (bool): Permission to access knowledge.
+        prompts (bool): Permission to access prompts.
+        tools (bool): Permission to access tools.
+    """
     models: bool
     knowledge: bool
     prompts: bool
@@ -62,6 +100,15 @@ class WorkspacePermissions(BaseModel):
 
 
 class ChatPermissions(BaseModel):
+    """
+    Represents the chat permissions for a user.
+
+    Attributes:
+        file_upload (bool): Permission to upload files.
+        delete (bool): Permission to delete messages.
+        edit (bool): Permission to edit messages.
+        temporary (bool): Permission to create temporary messages.
+    """
     file_upload: bool
     delete: bool
     edit: bool
@@ -69,12 +116,29 @@ class ChatPermissions(BaseModel):
 
 
 class UserPermissions(BaseModel):
+    """
+    Represents the permissions for a user.
+
+    Attributes:
+        workspace (WorkspacePermissions): The workspace permissions.
+        chat (ChatPermissions): The chat permissions.
+    """
     workspace: WorkspacePermissions
     chat: ChatPermissions
 
 
 @router.get("/default/permissions")
 async def get_user_permissions(request: Request, user=Depends(get_admin_user)):
+    """
+    Retrieve the default user permissions.
+
+    Args:
+        request (Request): The request object.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The default user permissions.
+    """
     return request.app.state.config.USER_PERMISSIONS
 
 
@@ -82,6 +146,17 @@ async def get_user_permissions(request: Request, user=Depends(get_admin_user)):
 async def update_user_permissions(
     request: Request, form_data: UserPermissions, user=Depends(get_admin_user)
 ):
+    """
+    Update the default user permissions.
+
+    Args:
+        request (Request): The request object.
+        form_data (UserPermissions): The form data containing the updated permissions.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The updated user permissions.
+    """
     request.app.state.config.USER_PERMISSIONS = form_data.model_dump()
     return request.app.state.config.USER_PERMISSIONS
 
@@ -93,6 +168,16 @@ async def update_user_permissions(
 
 @router.post("/update/role", response_model=Optional[UserModel])
 async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin_user)):
+    """
+    Update the role of a user.
+
+    Args:
+        form_data (UserRoleUpdateForm): The form data containing the user ID and new role.
+        user: The authenticated admin user.
+
+    Returns:
+        Optional[UserModel]: The updated user model, or None if the update was not successful.
+    """
     if user.id != form_data.id and form_data.id != Users.get_first_user().id:
         return Users.update_user_role_by_id(form_data.id, form_data.role)
 
@@ -109,6 +194,15 @@ async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin
 
 @router.get("/user/settings", response_model=Optional[UserSettings])
 async def get_user_settings_by_session_user(user=Depends(get_verified_user)):
+    """
+    Retrieve the settings of the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        Optional[UserSettings]: The user settings, or None if the user was not found.
+    """
     user = Users.get_user_by_id(user.id)
     if user:
         return user.settings
@@ -128,6 +222,16 @@ async def get_user_settings_by_session_user(user=Depends(get_verified_user)):
 async def update_user_settings_by_session_user(
     form_data: UserSettings, user=Depends(get_verified_user)
 ):
+    """
+    Update the settings of the authenticated user.
+
+    Args:
+        form_data (UserSettings): The form data containing the updated settings.
+        user: The authenticated user.
+
+    Returns:
+        UserSettings: The updated user settings.
+    """
     user = Users.update_user_by_id(user.id, {"settings": form_data.model_dump()})
     if user:
         return user.settings
@@ -145,6 +249,15 @@ async def update_user_settings_by_session_user(
 
 @router.get("/user/info", response_model=Optional[dict])
 async def get_user_info_by_session_user(user=Depends(get_verified_user)):
+    """
+    Retrieve the information of the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        Optional[dict]: The user information, or None if the user was not found.
+    """
     user = Users.get_user_by_id(user.id)
     if user:
         return user.info
@@ -164,6 +277,16 @@ async def get_user_info_by_session_user(user=Depends(get_verified_user)):
 async def update_user_info_by_session_user(
     form_data: dict, user=Depends(get_verified_user)
 ):
+    """
+    Update the information of the authenticated user.
+
+    Args:
+        form_data (dict): The form data containing the updated information.
+        user: The authenticated user.
+
+    Returns:
+        Optional[dict]: The updated user information, or None if the update was not successful.
+    """
     user = Users.get_user_by_id(user.id)
     if user:
         if user.info is None:
@@ -190,12 +313,29 @@ async def update_user_info_by_session_user(
 
 
 class UserResponse(BaseModel):
+    """
+    Represents the response for a user.
+
+    Attributes:
+        name (str): The name of the user.
+        profile_image_url (str): The URL of the user's profile image.
+    """
     name: str
     profile_image_url: str
 
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve a user by their ID.
+
+    Args:
+        user_id (str): The ID of the user to retrieve.
+        user: The authenticated user.
+
+    Returns:
+        UserResponse: The user response containing the user's name and profile image URL.
+    """
     # Check if user_id is a shared chat
     # If it is, get the user_id from the chat
     if user_id.startswith("shared-"):
@@ -231,6 +371,17 @@ async def update_user_by_id(
     form_data: UserUpdateForm,
     session_user=Depends(get_admin_user),
 ):
+    """
+    Update a user by their ID.
+
+    Args:
+        user_id (str): The ID of the user to update.
+        form_data (UserUpdateForm): The form data containing the updated user information.
+        session_user: The authenticated admin user.
+
+    Returns:
+        Optional[UserModel]: The updated user model, or None if the update was not successful.
+    """
     user = Users.get_user_by_id(user_id)
 
     if user:
@@ -278,6 +429,16 @@ async def update_user_by_id(
 
 @router.delete("/{user_id}", response_model=bool)
 async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
+    """
+    Delete a user by their ID.
+
+    Args:
+        user_id (str): The ID of the user to delete.
+        user: The authenticated admin user.
+
+    Returns:
+        bool: True if the user was successfully deleted, False otherwise.
+    """
     if user.id != user_id:
         result = Auths.delete_auth_by_id(user_id)
 
