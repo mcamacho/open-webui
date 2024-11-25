@@ -17,6 +17,17 @@ default_headers = {"User-Agent": "Mozilla/5.0"}
 
 
 def queue_prompt(prompt, client_id, base_url):
+    """
+    Queue a prompt for image generation.
+
+    Args:
+        prompt (str): The prompt for image generation.
+        client_id (str): The client ID.
+        base_url (str): The base URL of the ComfyUI server.
+
+    Returns:
+        dict: The response from the server.
+    """
     log.info("queue_prompt")
     p = {"prompt": prompt, "client_id": client_id}
     data = json.dumps(p).encode("utf-8")
@@ -33,6 +44,18 @@ def queue_prompt(prompt, client_id, base_url):
 
 
 def get_image(filename, subfolder, folder_type, base_url):
+    """
+    Retrieve an image from the server.
+
+    Args:
+        filename (str): The name of the image file.
+        subfolder (str): The subfolder where the image is stored.
+        folder_type (str): The type of folder.
+        base_url (str): The base URL of the ComfyUI server.
+
+    Returns:
+        bytes: The image data.
+    """
     log.info("get_image")
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
@@ -44,6 +67,18 @@ def get_image(filename, subfolder, folder_type, base_url):
 
 
 def get_image_url(filename, subfolder, folder_type, base_url):
+    """
+    Get the URL of an image.
+
+    Args:
+        filename (str): The name of the image file.
+        subfolder (str): The subfolder where the image is stored.
+        folder_type (str): The type of folder.
+        base_url (str): The base URL of the ComfyUI server.
+
+    Returns:
+        str: The URL of the image.
+    """
     log.info("get_image")
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
@@ -51,6 +86,16 @@ def get_image_url(filename, subfolder, folder_type, base_url):
 
 
 def get_history(prompt_id, base_url):
+    """
+    Retrieve the history of a prompt.
+
+    Args:
+        prompt_id (str): The ID of the prompt.
+        base_url (str): The base URL of the ComfyUI server.
+
+    Returns:
+        dict: The history of the prompt.
+    """
     log.info("get_history")
 
     req = urllib.request.Request(
@@ -61,6 +106,18 @@ def get_history(prompt_id, base_url):
 
 
 def get_images(ws, prompt, client_id, base_url):
+    """
+    Retrieve generated images for a prompt.
+
+    Args:
+        ws (websocket.WebSocket): The WebSocket connection.
+        prompt (str): The prompt for image generation.
+        client_id (str): The client ID.
+        base_url (str): The base URL of the ComfyUI server.
+
+    Returns:
+        dict: The generated images.
+    """
     prompt_id = queue_prompt(prompt, client_id, base_url)["prompt_id"]
     output_images = []
     while True:
@@ -88,6 +145,10 @@ def get_images(ws, prompt, client_id, base_url):
 
 
 class ComfyUINodeInput(BaseModel):
+    """
+    Represents an input node for the ComfyUI workflow.
+    """
+
     type: Optional[str] = None
     node_ids: list[str] = []
     key: Optional[str] = "text"
@@ -95,19 +156,25 @@ class ComfyUINodeInput(BaseModel):
 
 
 class ComfyUIWorkflow(BaseModel):
+    """
+    Represents a ComfyUI workflow.
+    """
+
     workflow: str
     nodes: list[ComfyUINodeInput]
 
 
 class ComfyUIGenerateImageForm(BaseModel):
-    workflow: ComfyUIWorkflow
+    """
+    Form for generating images using ComfyUI.
+    """
 
+    workflow: ComfyUIWorkflow
     prompt: str
     negative_prompt: Optional[str] = None
     width: int
     height: int
     n: int = 1
-
     steps: Optional[int] = None
     seed: Optional[int] = None
 
@@ -115,6 +182,18 @@ class ComfyUIGenerateImageForm(BaseModel):
 async def comfyui_generate_image(
     model: str, payload: ComfyUIGenerateImageForm, client_id, base_url
 ):
+    """
+    Generate images using ComfyUI.
+
+    Args:
+        model (str): The model to use for image generation.
+        payload (ComfyUIGenerateImageForm): The form data for image generation.
+        client_id (str): The client ID.
+        base_url (str): The base URL of the ComfyUI server.
+
+    Returns:
+        dict: The generated images.
+    """
     ws_url = base_url.replace("http://", "ws://").replace("https://", "wss://")
     workflow = json.loads(payload.workflow.workflow)
 

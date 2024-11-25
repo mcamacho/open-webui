@@ -101,6 +101,13 @@ SPEECH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def set_faster_whisper_model(model: str, auto_update: bool = False):
+    """
+    Set the faster whisper model for speech-to-text processing.
+
+    Args:
+        model (str): The model name or path.
+        auto_update (bool): Whether to allow automatic updates of the model.
+    """
     if model and app.state.config.STT_ENGINE == "":
         from faster_whisper import WhisperModel
 
@@ -126,6 +133,10 @@ def set_faster_whisper_model(model: str, auto_update: bool = False):
 
 
 class TTSConfigForm(BaseModel):
+    """
+    Form for updating Text-to-Speech (TTS) configuration.
+    """
+
     OPENAI_API_BASE_URL: str
     OPENAI_API_KEY: str
     API_KEY: str
@@ -138,6 +149,10 @@ class TTSConfigForm(BaseModel):
 
 
 class STTConfigForm(BaseModel):
+    """
+    Form for updating Speech-to-Text (STT) configuration.
+    """
+
     OPENAI_API_BASE_URL: str
     OPENAI_API_KEY: str
     ENGINE: str
@@ -146,6 +161,10 @@ class STTConfigForm(BaseModel):
 
 
 class AudioConfigUpdateForm(BaseModel):
+    """
+    Form for updating both TTS and STT configurations.
+    """
+
     tts: TTSConfigForm
     stt: STTConfigForm
 
@@ -155,7 +174,15 @@ from pydub.utils import mediainfo
 
 
 def is_mp4_audio(file_path):
-    """Check if the given file is an MP4 audio file."""
+    """
+    Check if the given file is an MP4 audio file.
+
+    Args:
+        file_path (str): Path to the audio file.
+
+    Returns:
+        bool: True if the file is an MP4 audio file, False otherwise.
+    """
     if not os.path.isfile(file_path):
         print(f"File not found: {file_path}")
         return False
@@ -171,7 +198,13 @@ def is_mp4_audio(file_path):
 
 
 def convert_mp4_to_wav(file_path, output_path):
-    """Convert MP4 audio file to WAV format."""
+    """
+    Convert MP4 audio file to WAV format.
+
+    Args:
+        file_path (str): Path to the MP4 audio file.
+        output_path (str): Path to save the converted WAV file.
+    """
     audio = AudioSegment.from_file(file_path, format="mp4")
     audio.export(output_path, format="wav")
     print(f"Converted {file_path} to {output_path}")
@@ -179,6 +212,15 @@ def convert_mp4_to_wav(file_path, output_path):
 
 @app.get("/config")
 async def get_audio_config(user=Depends(get_admin_user)):
+    """
+    Get the current audio configuration for TTS and STT.
+
+    Args:
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The current TTS and STT configurations.
+    """
     return {
         "tts": {
             "OPENAI_API_BASE_URL": app.state.config.TTS_OPENAI_API_BASE_URL,
@@ -205,6 +247,16 @@ async def get_audio_config(user=Depends(get_admin_user)):
 async def update_audio_config(
     form_data: AudioConfigUpdateForm, user=Depends(get_admin_user)
 ):
+    """
+    Update the audio configuration for TTS and STT.
+
+    Args:
+        form_data (AudioConfigUpdateForm): The new TTS and STT configurations.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The updated TTS and STT configurations.
+    """
     app.state.config.TTS_OPENAI_API_BASE_URL = form_data.tts.OPENAI_API_BASE_URL
     app.state.config.TTS_OPENAI_API_KEY = form_data.tts.OPENAI_API_KEY
     app.state.config.TTS_API_KEY = form_data.tts.API_KEY
@@ -247,6 +299,9 @@ async def update_audio_config(
 
 
 def load_speech_pipeline():
+    """
+    Load the speech synthesis pipeline and speaker embeddings dataset.
+    """
     from transformers import pipeline
     from datasets import load_dataset
 
@@ -263,6 +318,16 @@ def load_speech_pipeline():
 
 @app.post("/speech")
 async def speech(request: Request, user=Depends(get_verified_user)):
+    """
+    Generate speech from text using the configured TTS engine.
+
+    Args:
+        request (Request): The HTTP request containing the text input.
+        user: The authenticated user.
+
+    Returns:
+        FileResponse: The generated speech audio file.
+    """
     body = await request.body()
     name = hashlib.sha256(body).hexdigest()
 
@@ -467,6 +532,15 @@ async def speech(request: Request, user=Depends(get_verified_user)):
 
 
 def transcribe(file_path):
+    """
+    Transcribe the given audio file to text using the configured STT engine.
+
+    Args:
+        file_path (str): Path to the audio file.
+
+    Returns:
+        dict: The transcription result.
+    """
     print("transcribe", file_path)
     filename = os.path.basename(file_path)
     file_dir = os.path.dirname(file_path)
@@ -546,6 +620,16 @@ def transcription(
     file: UploadFile = File(...),
     user=Depends(get_verified_user),
 ):
+    """
+    Handle audio file upload and transcribe the audio to text.
+
+    Args:
+        file (UploadFile): The uploaded audio file.
+        user: The authenticated user.
+
+    Returns:
+        dict: The transcription result and filename.
+    """
     log.info(f"file.content_type: {file.content_type}")
 
     if file.content_type not in ["audio/mpeg", "audio/wav", "audio/ogg", "audio/x-m4a"]:
@@ -614,6 +698,12 @@ def transcription(
 
 
 def get_available_models() -> list[dict]:
+    """
+    Get the available TTS models based on the configured TTS engine.
+
+    Returns:
+        list[dict]: A list of available TTS models.
+    """
     if app.state.config.TTS_ENGINE == "openai":
         return [{"id": "tts-1"}, {"id": "tts-1-hd"}]
     elif app.state.config.TTS_ENGINE == "elevenlabs":
@@ -638,11 +728,25 @@ def get_available_models() -> list[dict]:
 
 @app.get("/models")
 async def get_models(user=Depends(get_verified_user)):
+    """
+    Get the available TTS models.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        dict: A dictionary containing the available TTS models.
+    """
     return {"models": get_available_models()}
 
 
 def get_available_voices() -> dict:
-    """Returns {voice_id: voice_name} dict"""
+    """
+    Get the available TTS voices based on the configured TTS engine.
+
+    Returns:
+        dict: A dictionary of available TTS voices.
+    """
     ret = {}
     if app.state.config.TTS_ENGINE == "openai":
         ret = {
@@ -681,18 +785,16 @@ def get_available_voices() -> dict:
 @lru_cache
 def get_elevenlabs_voices() -> dict:
     """
-    Note, set the following in your .env file to use Elevenlabs:
-    AUDIO_TTS_ENGINE=elevenlabs
-    AUDIO_TTS_API_KEY=sk_...  # Your Elevenlabs API key
-    AUDIO_TTS_VOICE=EXAVITQu4vr4xnSDxMaL  # From https://api.elevenlabs.io/v1/voices
-    AUDIO_TTS_MODEL=eleven_multilingual_v2
+    Get the available voices from Elevenlabs.
+
+    Returns:
+        dict: A dictionary of available voices from Elevenlabs.
     """
     headers = {
         "xi-api-key": app.state.config.TTS_API_KEY,
         "Content-Type": "application/json",
     }
     try:
-        # TODO: Add retries
         response = requests.get("https://api.elevenlabs.io/v1/voices", headers=headers)
         response.raise_for_status()
         voices_data = response.json()
@@ -701,7 +803,6 @@ def get_elevenlabs_voices() -> dict:
         for voice in voices_data.get("voices", []):
             voices[voice["voice_id"]] = voice["name"]
     except requests.RequestException as e:
-        # Avoid @lru_cache with exception
         log.error(f"Error fetching voices: {str(e)}")
         raise RuntimeError(f"Error fetching voices: {str(e)}")
 
@@ -710,4 +811,13 @@ def get_elevenlabs_voices() -> dict:
 
 @app.get("/voices")
 async def get_voices(user=Depends(get_verified_user)):
+    """
+    Get the available TTS voices.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        dict: A dictionary containing the available TTS voices.
+    """
     return {"voices": [{"id": k, "name": v} for k, v in get_available_voices().items()]}

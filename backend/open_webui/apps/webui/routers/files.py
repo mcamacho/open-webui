@@ -40,6 +40,19 @@ router = APIRouter()
 
 @router.post("/", response_model=FileModelResponse)
 def upload_file(file: UploadFile = File(...), user=Depends(get_verified_user)):
+    """
+    Upload a file to the server.
+
+    Args:
+        file (UploadFile): The file to be uploaded.
+        user: The authenticated user.
+
+    Returns:
+        FileModelResponse: The uploaded file's metadata and content.
+
+    Raises:
+        HTTPException: If there is an error during the upload process.
+    """
     log.info(f"file.content_type: {file.content_type}")
     try:
         unsanitized_filename = file.filename
@@ -103,6 +116,15 @@ def upload_file(file: UploadFile = File(...), user=Depends(get_verified_user)):
 
 @router.get("/", response_model=list[FileModelResponse])
 async def list_files(user=Depends(get_verified_user)):
+    """
+    List all files uploaded by the user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        list[FileModelResponse]: A list of files uploaded by the user.
+    """
     if user.role == "admin":
         files = Files.get_files()
     else:
@@ -117,6 +139,18 @@ async def list_files(user=Depends(get_verified_user)):
 
 @router.delete("/all")
 async def delete_all_files(user=Depends(get_admin_user)):
+    """
+    Delete all files from the server.
+
+    Args:
+        user: The authenticated admin user.
+
+    Returns:
+        dict: A message indicating the result of the deletion.
+
+    Raises:
+        HTTPException: If there is an error during the deletion process.
+    """
     result = Files.delete_all_files()
     if result:
         try:
@@ -143,6 +177,19 @@ async def delete_all_files(user=Depends(get_admin_user)):
 
 @router.get("/{id}", response_model=Optional[FileModel])
 async def get_file_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get a file by its ID.
+
+    Args:
+        id (str): The ID of the file.
+        user: The authenticated user.
+
+    Returns:
+        Optional[FileModel]: The file's metadata and content.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
@@ -161,6 +208,19 @@ async def get_file_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/{id}/data/content")
 async def get_file_data_content_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get the content of a file by its ID.
+
+    Args:
+        id (str): The ID of the file.
+        user: The authenticated user.
+
+    Returns:
+        dict: The content of the file.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
@@ -185,6 +245,20 @@ class ContentForm(BaseModel):
 async def update_file_data_content_by_id(
     id: str, form_data: ContentForm, user=Depends(get_verified_user)
 ):
+    """
+    Update the content of a file by its ID.
+
+    Args:
+        id (str): The ID of the file.
+        form_data (ContentForm): The new content of the file.
+        user: The authenticated user.
+
+    Returns:
+        dict: The updated content of the file.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
@@ -210,6 +284,19 @@ async def update_file_data_content_by_id(
 
 @router.get("/{id}/content")
 async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get the content of a file by its ID.
+
+    Args:
+        id (str): The ID of the file.
+        user: The authenticated user.
+
+    Returns:
+        FileResponse: The file content as a response.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
@@ -244,6 +331,19 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/{id}/content/html")
 async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get the HTML content of a file by its ID.
+
+    Args:
+        id (str): The ID of the file.
+        user: The authenticated user.
+
+    Returns:
+        FileResponse: The HTML file content as a response.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
@@ -275,6 +375,19 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/{id}/content/{file_name}")
 async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Get the content of a file by its ID and file name.
+
+    Args:
+        id (str): The ID of the file.
+        user: The authenticated user.
+
+    Returns:
+        FileResponse or StreamingResponse: The file content as a response.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
@@ -323,6 +436,19 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.delete("/{id}")
 async def delete_file_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Delete a file by its ID.
+
+    Args:
+        id (str): The ID of the file.
+        user: The authenticated user.
+
+    Returns:
+        dict: A message indicating the result of the deletion.
+
+    Raises:
+        HTTPException: If the file is not found or the user is not authorized to access it.
+    """
     file = Files.get_file_by_id(id)
     if file and (file.user_id == user.id or user.role == "admin"):
         result = Files.delete_file_by_id(id)

@@ -20,6 +20,15 @@ router = APIRouter()
 
 @router.get("/", response_model=list[PromptModel])
 async def get_prompts(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of prompts accessible to the user.
+
+    Args:
+        user: The current authenticated user.
+
+    Returns:
+        list[PromptModel]: List of prompts accessible to the user.
+    """
     if user.role == "admin":
         prompts = Prompts.get_prompts()
     else:
@@ -30,6 +39,15 @@ async def get_prompts(user=Depends(get_verified_user)):
 
 @router.get("/list", response_model=list[PromptUserResponse])
 async def get_prompt_list(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of prompts accessible to the user with write permission.
+
+    Args:
+        user: The current authenticated user.
+
+    Returns:
+        list[PromptUserResponse]: List of prompts accessible to the user with write permission.
+    """
     if user.role == "admin":
         prompts = Prompts.get_prompts()
     else:
@@ -47,6 +65,20 @@ async def get_prompt_list(user=Depends(get_verified_user)):
 async def create_new_prompt(
     request: Request, form_data: PromptForm, user=Depends(get_verified_user)
 ):
+    """
+    Create a new prompt.
+
+    Args:
+        request: The HTTP request object.
+        form_data: The form data for the new prompt.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[PromptModel]: The created prompt, or None if creation failed.
+
+    Raises:
+        HTTPException: If the user is not authorized or the command is already taken.
+    """
     if user.role != "admin" and not has_permission(
         user.id, "workspace.prompts", request.app.state.config.USER_PERMISSIONS
     ):
@@ -78,6 +110,19 @@ async def create_new_prompt(
 
 @router.get("/command/{command}", response_model=Optional[PromptModel])
 async def get_prompt_by_command(command: str, user=Depends(get_verified_user)):
+    """
+    Retrieve a prompt by its command.
+
+    Args:
+        command: The command of the prompt.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[PromptModel]: The prompt, or None if not found.
+
+    Raises:
+        HTTPException: If the prompt is not found or the user is not authorized to access it.
+    """
     prompt = Prompts.get_prompt_by_command(f"/{command}")
 
     if prompt:
@@ -105,6 +150,20 @@ async def update_prompt_by_command(
     form_data: PromptForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Update a prompt by its command.
+
+    Args:
+        command: The command of the prompt.
+        form_data: The updated form data for the prompt.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[PromptModel]: The updated prompt, or None if not found.
+
+    Raises:
+        HTTPException: If the prompt is not found or the user is not authorized to update it.
+    """
     prompt = Prompts.get_prompt_by_command(f"/{command}")
     if not prompt:
         raise HTTPException(
@@ -135,6 +194,19 @@ async def update_prompt_by_command(
 
 @router.delete("/command/{command}/delete", response_model=bool)
 async def delete_prompt_by_command(command: str, user=Depends(get_verified_user)):
+    """
+    Delete a prompt by its command.
+
+    Args:
+        command: The command of the prompt.
+        user: The current authenticated user.
+
+    Returns:
+        bool: True if the prompt was successfully deleted, False otherwise.
+
+    Raises:
+        HTTPException: If the prompt is not found or the user is not authorized to delete it.
+    """
     prompt = Prompts.get_prompt_by_command(f"/{command}")
     if not prompt:
         raise HTTPException(

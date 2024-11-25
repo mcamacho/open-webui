@@ -68,6 +68,17 @@ class SessionUserResponse(Token, UserResponse):
 async def get_session_user(
     request: Request, response: Response, user=Depends(get_current_user)
 ):
+    """
+    Get the current session user and generate a new token.
+
+    Args:
+        request (Request): The HTTP request object.
+        response (Response): The HTTP response object.
+        user: The authenticated user.
+
+    Returns:
+        dict: The session user information and token.
+    """
     expires_delta = parse_duration(request.app.state.config.JWT_EXPIRES_IN)
     expires_at = None
     if expires_delta:
@@ -120,6 +131,16 @@ async def get_session_user(
 async def update_profile(
     form_data: UpdateProfileForm, session_user=Depends(get_verified_user)
 ):
+    """
+    Update the profile of the authenticated user.
+
+    Args:
+        form_data (UpdateProfileForm): The form data containing the updated profile information.
+        session_user: The authenticated user.
+
+    Returns:
+        UserResponse: The updated user information.
+    """
     if session_user:
         user = Users.update_user_by_id(
             session_user.id,
@@ -142,6 +163,16 @@ async def update_profile(
 async def update_password(
     form_data: UpdatePasswordForm, session_user=Depends(get_current_user)
 ):
+    """
+    Update the password of the authenticated user.
+
+    Args:
+        form_data (UpdatePasswordForm): The form data containing the current and new passwords.
+        session_user: The authenticated user.
+
+    Returns:
+        bool: True if the password was updated successfully, False otherwise.
+    """
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
         raise HTTPException(400, detail=ERROR_MESSAGES.ACTION_PROHIBITED)
     if session_user:
@@ -161,6 +192,17 @@ async def update_password(
 ############################
 @router.post("/ldap", response_model=SigninResponse)
 async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
+    """
+    Authenticate a user using LDAP.
+
+    Args:
+        request (Request): The HTTP request object.
+        response (Response): The HTTP response object.
+        form_data (LdapForm): The form data containing the LDAP credentials.
+
+    Returns:
+        SigninResponse: The authenticated user information and token.
+    """
     ENABLE_LDAP = request.app.state.config.ENABLE_LDAP
     LDAP_SERVER_LABEL = request.app.state.config.LDAP_SERVER_LABEL
     LDAP_SERVER_HOST = request.app.state.config.LDAP_SERVER_HOST
@@ -307,6 +349,17 @@ async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
 
 @router.post("/signin", response_model=SessionUserResponse)
 async def signin(request: Request, response: Response, form_data: SigninForm):
+    """
+    Sign in a user and generate a new token.
+
+    Args:
+        request (Request): The HTTP request object.
+        response (Response): The HTTP response object.
+        form_data (SigninForm): The form data containing the email and password.
+
+    Returns:
+        SessionUserResponse: The authenticated user information and token.
+    """
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
         if WEBUI_AUTH_TRUSTED_EMAIL_HEADER not in request.headers:
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_TRUSTED_HEADER)
@@ -400,6 +453,17 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
 
 @router.post("/signup", response_model=SessionUserResponse)
 async def signup(request: Request, response: Response, form_data: SignupForm):
+    """
+    Sign up a new user and generate a new token.
+
+    Args:
+        request (Request): The HTTP request object.
+        response (Response): The HTTP response object.
+        form_data (SignupForm): The form data containing the user information.
+
+    Returns:
+        SessionUserResponse: The authenticated user information and token.
+    """
     if WEBUI_AUTH:
         if (
             not request.app.state.config.ENABLE_SIGNUP
@@ -503,6 +567,15 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
 
 @router.get("/signout")
 async def signout(response: Response):
+    """
+    Sign out the current user by deleting the token cookie.
+
+    Args:
+        response (Response): The HTTP response object.
+
+    Returns:
+        dict: A dictionary indicating the signout status.
+    """
     response.delete_cookie("token")
     return {"status": True}
 
@@ -514,6 +587,16 @@ async def signout(response: Response):
 
 @router.post("/add", response_model=SigninResponse)
 async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
+    """
+    Add a new user.
+
+    Args:
+        form_data (AddUserForm): The form data containing the new user information.
+        user: The authenticated admin user.
+
+    Returns:
+        SigninResponse: The added user information and token.
+    """
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
@@ -557,6 +640,16 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
 
 @router.get("/admin/details")
 async def get_admin_details(request: Request, user=Depends(get_current_user)):
+    """
+    Get the details of the admin user.
+
+    Args:
+        request (Request): The HTTP request object.
+        user: The authenticated user.
+
+    Returns:
+        dict: The admin user details.
+    """
     if request.app.state.config.SHOW_ADMIN_DETAILS:
         admin_email = request.app.state.config.ADMIN_EMAIL
         admin_name = None
@@ -588,6 +681,16 @@ async def get_admin_details(request: Request, user=Depends(get_current_user)):
 
 @router.get("/admin/config")
 async def get_admin_config(request: Request, user=Depends(get_admin_user)):
+    """
+    Get the admin configuration.
+
+    Args:
+        request (Request): The HTTP request object.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The admin configuration.
+    """
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
@@ -613,6 +716,17 @@ class AdminConfig(BaseModel):
 async def update_admin_config(
     request: Request, form_data: AdminConfig, user=Depends(get_admin_user)
 ):
+    """
+    Update the admin configuration.
+
+    Args:
+        request (Request): The HTTP request object.
+        form_data (AdminConfig): The form data containing the updated admin configuration.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The updated admin configuration.
+    """
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.ENABLE_SIGNUP = form_data.ENABLE_SIGNUP
     request.app.state.config.ENABLE_API_KEY = form_data.ENABLE_API_KEY
@@ -658,6 +772,16 @@ class LdapServerConfig(BaseModel):
 
 @router.get("/admin/config/ldap/server", response_model=LdapServerConfig)
 async def get_ldap_server(request: Request, user=Depends(get_admin_user)):
+    """
+    Get the LDAP server configuration.
+
+    Args:
+        request (Request): The HTTP request object.
+        user: The authenticated admin user.
+
+    Returns:
+        LdapServerConfig: The LDAP server configuration.
+    """
     return {
         "label": request.app.state.config.LDAP_SERVER_LABEL,
         "host": request.app.state.config.LDAP_SERVER_HOST,
@@ -677,6 +801,17 @@ async def get_ldap_server(request: Request, user=Depends(get_admin_user)):
 async def update_ldap_server(
     request: Request, form_data: LdapServerConfig, user=Depends(get_admin_user)
 ):
+    """
+    Update the LDAP server configuration.
+
+    Args:
+        request (Request): The HTTP request object.
+        form_data (LdapServerConfig): The form data containing the updated LDAP server configuration.
+        user: The authenticated admin user.
+
+    Returns:
+        LdapServerConfig: The updated LDAP server configuration.
+    """
     required_fields = [
         "label",
         "host",
@@ -726,6 +861,16 @@ async def update_ldap_server(
 
 @router.get("/admin/config/ldap")
 async def get_ldap_config(request: Request, user=Depends(get_admin_user)):
+    """
+    Get the LDAP configuration.
+
+    Args:
+        request (Request): The HTTP request object.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The LDAP configuration.
+    """
     return {"ENABLE_LDAP": request.app.state.config.ENABLE_LDAP}
 
 
@@ -737,6 +882,17 @@ class LdapConfigForm(BaseModel):
 async def update_ldap_config(
     request: Request, form_data: LdapConfigForm, user=Depends(get_admin_user)
 ):
+    """
+    Update the LDAP configuration.
+
+    Args:
+        request (Request): The HTTP request object.
+        form_data (LdapConfigForm): The form data containing the updated LDAP configuration.
+        user: The authenticated admin user.
+
+    Returns:
+        dict: The updated LDAP configuration.
+    """
     request.app.state.config.ENABLE_LDAP = form_data.enable_ldap
     return {"ENABLE_LDAP": request.app.state.config.ENABLE_LDAP}
 
@@ -749,6 +905,16 @@ async def update_ldap_config(
 # create api key
 @router.post("/api_key", response_model=ApiKey)
 async def generate_api_key(request: Request, user=Depends(get_current_user)):
+    """
+    Generate a new API key for the authenticated user.
+
+    Args:
+        request (Request): The HTTP request object.
+        user: The authenticated user.
+
+    Returns:
+        ApiKey: The generated API key.
+    """
     if not request.app.state.config.ENABLE_API_KEY:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
@@ -769,6 +935,15 @@ async def generate_api_key(request: Request, user=Depends(get_current_user)):
 # delete api key
 @router.delete("/api_key", response_model=bool)
 async def delete_api_key(user=Depends(get_current_user)):
+    """
+    Delete the API key of the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        bool: True if the API key was deleted successfully, False otherwise.
+    """
     success = Users.update_user_api_key_by_id(user.id, None)
     return success
 
@@ -776,6 +951,15 @@ async def delete_api_key(user=Depends(get_current_user)):
 # get api key
 @router.get("/api_key", response_model=ApiKey)
 async def get_api_key(user=Depends(get_current_user)):
+    """
+    Get the API key of the authenticated user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        ApiKey: The API key of the authenticated user.
+    """
     api_key = Users.get_user_api_key_by_id(user.id)
     if api_key:
         return {

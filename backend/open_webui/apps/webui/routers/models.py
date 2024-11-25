@@ -25,6 +25,16 @@ router = APIRouter()
 
 @router.get("/", response_model=list[ModelUserResponse])
 async def get_models(id: Optional[str] = None, user=Depends(get_verified_user)):
+    """
+    Retrieve a list of models accessible to the user.
+
+    Args:
+        id (Optional[str]): Optional model ID to filter by.
+        user: The current authenticated user.
+
+    Returns:
+        list[ModelUserResponse]: List of models accessible to the user.
+    """
     if user.role == "admin":
         return Models.get_models()
     else:
@@ -38,6 +48,15 @@ async def get_models(id: Optional[str] = None, user=Depends(get_verified_user)):
 
 @router.get("/base", response_model=list[ModelResponse])
 async def get_base_models(user=Depends(get_admin_user)):
+    """
+    Retrieve a list of base models.
+
+    Args:
+        user: The current authenticated admin user.
+
+    Returns:
+        list[ModelResponse]: List of base models.
+    """
     return Models.get_base_models()
 
 
@@ -52,6 +71,20 @@ async def create_new_model(
     form_data: ModelForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Create a new model.
+
+    Args:
+        request: The HTTP request object.
+        form_data (ModelForm): The form data for the new model.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[ModelModel]: The created model, or None if creation failed.
+
+    Raises:
+        HTTPException: If the user is not authorized or the model ID is already taken.
+    """
     if user.role != "admin" and not has_permission(
         user.id, "workspace.models", request.app.state.config.USER_PERMISSIONS
     ):
@@ -86,6 +119,19 @@ async def create_new_model(
 # Note: We're not using the typical url path param here, but instead using a query parameter to allow '/' in the id
 @router.get("/model", response_model=Optional[ModelResponse])
 async def get_model_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve a model by its ID.
+
+    Args:
+        id (str): The ID of the model.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[ModelResponse]: The model, or None if not found.
+
+    Raises:
+        HTTPException: If the model is not found or the user is not authorized to access it.
+    """
     model = Models.get_model_by_id(id)
     if model:
         if (
@@ -108,6 +154,19 @@ async def get_model_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/model/toggle", response_model=Optional[ModelResponse])
 async def toggle_model_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Toggle the active status of a model by its ID.
+
+    Args:
+        id (str): The ID of the model.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[ModelResponse]: The updated model, or None if not found.
+
+    Raises:
+        HTTPException: If the model is not found, the user is not authorized, or there is an error updating the model.
+    """
     model = Models.get_model_by_id(id)
     if model:
         if (
@@ -147,6 +206,20 @@ async def update_model_by_id(
     form_data: ModelForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Update a model by its ID.
+
+    Args:
+        id (str): The ID of the model.
+        form_data (ModelForm): The updated form data for the model.
+        user: The current authenticated user.
+
+    Returns:
+        Optional[ModelModel]: The updated model, or None if not found.
+
+    Raises:
+        HTTPException: If the model is not found.
+    """
     model = Models.get_model_by_id(id)
 
     if not model:
@@ -166,6 +239,19 @@ async def update_model_by_id(
 
 @router.delete("/model/delete", response_model=bool)
 async def delete_model_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Delete a model by its ID.
+
+    Args:
+        id (str): The ID of the model.
+        user: The current authenticated user.
+
+    Returns:
+        bool: True if the model was successfully deleted, False otherwise.
+
+    Raises:
+        HTTPException: If the model is not found or the user is not authorized to delete it.
+    """
     model = Models.get_model_by_id(id)
     if not model:
         raise HTTPException(
@@ -185,5 +271,14 @@ async def delete_model_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.delete("/delete/all", response_model=bool)
 async def delete_all_models(user=Depends(get_admin_user)):
+    """
+    Delete all models.
+
+    Args:
+        user: The current authenticated admin user.
+
+    Returns:
+        bool: True if all models were successfully deleted, False otherwise.
+    """
     result = Models.delete_all_models()
     return result

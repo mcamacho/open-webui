@@ -185,6 +185,12 @@ app.include_router(utils.router, prefix="/utils", tags=["utils"])
 
 @app.get("/")
 async def get_status():
+    """
+    Get the status of the application.
+
+    Returns:
+        dict: A dictionary containing the status, authentication status, default models, and default prompt suggestions.
+    """
     return {
         "status": True,
         "auth": WEBUI_AUTH,
@@ -194,6 +200,12 @@ async def get_status():
 
 
 async def get_all_models():
+    """
+    Get all available models, including pipe models and evaluation arena models.
+
+    Returns:
+        list: A list of dictionaries representing the available models.
+    """
     models = []
     pipe_models = await get_pipe_models()
     models = models + pipe_models
@@ -235,6 +247,15 @@ async def get_all_models():
 
 
 def get_function_module(pipe_id: str):
+    """
+    Get the function module for a given pipe ID.
+
+    Args:
+        pipe_id (str): The ID of the pipe.
+
+    Returns:
+        module: The function module.
+    """
     # Check if function is already loaded
     if pipe_id not in app.state.FUNCTIONS:
         function_module, _, _ = load_function_module_by_id(pipe_id)
@@ -249,6 +270,12 @@ def get_function_module(pipe_id: str):
 
 
 async def get_pipe_models():
+    """
+    Get all available pipe models.
+
+    Returns:
+        list: A list of dictionaries representing the available pipe models.
+    """
     pipes = Functions.get_functions_by_type("pipe", active_only=True)
     pipe_models = []
 
@@ -308,6 +335,16 @@ async def get_pipe_models():
 
 
 async def execute_pipe(pipe, params):
+    """
+    Execute a pipe function with the given parameters.
+
+    Args:
+        pipe (function): The pipe function to execute.
+        params (dict): The parameters to pass to the pipe function.
+
+    Returns:
+        Any: The result of the pipe function execution.
+    """
     if inspect.iscoroutinefunction(pipe):
         return await pipe(**params)
     else:
@@ -315,6 +352,15 @@ async def execute_pipe(pipe, params):
 
 
 async def get_message_content(res: str | Generator | AsyncGenerator) -> str:
+    """
+    Get the content of a message from the response.
+
+    Args:
+        res (str | Generator | AsyncGenerator): The response containing the message.
+
+    Returns:
+        str: The content of the message.
+    """
     if isinstance(res, str):
         return res
     if isinstance(res, Generator):
@@ -324,6 +370,16 @@ async def get_message_content(res: str | Generator | AsyncGenerator) -> str:
 
 
 def process_line(form_data: dict, line):
+    """
+    Process a line of data and format it for streaming.
+
+    Args:
+        form_data (dict): The form data containing the model information.
+        line (str | dict | BaseModel): The line of data to process.
+
+    Returns:
+        str: The formatted line of data.
+    """
     if isinstance(line, BaseModel):
         line = line.model_dump_json()
         line = f"data: {line}"
@@ -343,6 +399,15 @@ def process_line(form_data: dict, line):
 
 
 def get_pipe_id(form_data: dict) -> str:
+    """
+    Get the pipe ID from the form data.
+
+    Args:
+        form_data (dict): The form data containing the model information.
+
+    Returns:
+        str: The pipe ID.
+    """
     pipe_id = form_data["model"]
     if "." in pipe_id:
         pipe_id, _ = pipe_id.split(".", 1)
@@ -351,6 +416,18 @@ def get_pipe_id(form_data: dict) -> str:
 
 
 def get_function_params(function_module, form_data, user, extra_params=None):
+    """
+    Get the parameters for a function.
+
+    Args:
+        function_module (module): The function module.
+        form_data (dict): The form data containing the model information.
+        user (object): The user object.
+        extra_params (dict, optional): Additional parameters. Defaults to None.
+
+    Returns:
+        dict: The parameters for the function.
+    """
     if extra_params is None:
         extra_params = {}
 
@@ -374,6 +451,17 @@ def get_function_params(function_module, form_data, user, extra_params=None):
 
 
 async def generate_function_chat_completion(form_data, user, models: dict = {}):
+    """
+    Generate a chat completion using a function.
+
+    Args:
+        form_data (dict): The form data containing the model information.
+        user (object): The user object.
+        models (dict, optional): Additional models. Defaults to {}.
+
+    Returns:
+        dict | StreamingResponse: The chat completion response.
+    """
     model_id = form_data.get("model")
     model_info = Models.get_model_by_id(model_id)
 

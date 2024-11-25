@@ -35,6 +35,15 @@ router = APIRouter()
 
 @router.get("/", response_model=list[KnowledgeUserResponse])
 async def get_knowledge(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of knowledge bases accessible to the user.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        A list of knowledge bases with associated files.
+    """
     knowledge_bases = []
 
     if user.role == "admin":
@@ -83,6 +92,15 @@ async def get_knowledge(user=Depends(get_verified_user)):
 
 @router.get("/list", response_model=list[KnowledgeUserResponse])
 async def get_knowledge_list(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of knowledge bases accessible to the user for writing.
+
+    Args:
+        user: The authenticated user.
+
+    Returns:
+        A list of knowledge bases with associated files.
+    """
     knowledge_bases = []
 
     if user.role == "admin":
@@ -137,6 +155,17 @@ async def get_knowledge_list(user=Depends(get_verified_user)):
 async def create_new_knowledge(
     request: Request, form_data: KnowledgeForm, user=Depends(get_verified_user)
 ):
+    """
+    Create a new knowledge base.
+
+    Args:
+        request: The HTTP request object.
+        form_data: The form data for creating the knowledge base.
+        user: The authenticated user.
+
+    Returns:
+        The created knowledge base.
+    """
     if user.role != "admin" and not has_permission(
         user.id, "workspace.knowledge", request.app.state.config.USER_PERMISSIONS
     ):
@@ -167,6 +196,16 @@ class KnowledgeFilesResponse(KnowledgeResponse):
 
 @router.get("/{id}", response_model=Optional[KnowledgeFilesResponse])
 async def get_knowledge_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        user: The authenticated user.
+
+    Returns:
+        The knowledge base with associated files.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
 
     if knowledge:
@@ -202,6 +241,17 @@ async def update_knowledge_by_id(
     form_data: KnowledgeForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Update a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        form_data: The form data for updating the knowledge base.
+        user: The authenticated user.
+
+    Returns:
+        The updated knowledge base with associated files.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
         raise HTTPException(
@@ -246,6 +296,17 @@ def add_file_to_knowledge_by_id(
     form_data: KnowledgeFileIdForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Add a file to a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        form_data: The form data containing the file ID.
+        user: The authenticated user.
+
+    Returns:
+        The updated knowledge base with associated files.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
 
     if not knowledge:
@@ -322,6 +383,17 @@ def update_file_from_knowledge_by_id(
     form_data: KnowledgeFileIdForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Update a file in a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        form_data: The form data containing the file ID.
+        user: The authenticated user.
+
+    Returns:
+        The updated knowledge base with associated files.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
         raise HTTPException(
@@ -384,6 +456,17 @@ def remove_file_from_knowledge_by_id(
     form_data: KnowledgeFileIdForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Remove a file from a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        form_data: The form data containing the file ID.
+        user: The authenticated user.
+
+    Returns:
+        The updated knowledge base with associated files.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
         raise HTTPException(
@@ -457,6 +540,16 @@ def remove_file_from_knowledge_by_id(
 
 @router.delete("/{id}/delete", response_model=bool)
 async def delete_knowledge_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Delete a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        user: The authenticated user.
+
+    Returns:
+        A boolean indicating whether the deletion was successful.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
         raise HTTPException(
@@ -486,6 +579,16 @@ async def delete_knowledge_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/reset", response_model=Optional[KnowledgeResponse])
 async def reset_knowledge_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Reset a knowledge base by its ID.
+
+    Args:
+        id: The ID of the knowledge base.
+        user: The authenticated user.
+
+    Returns:
+        The reset knowledge base.
+    """
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
         raise HTTPException(

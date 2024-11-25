@@ -26,6 +26,10 @@ router = APIRouter()
 
 @router.get("/", response_model=list[ToolUserResponse])
 async def get_tools(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of tools available to the user.
+    Admin users get all tools, while regular users get tools they have read access to.
+    """
     if user.role == "admin":
         tools = Tools.get_tools()
     else:
@@ -40,6 +44,10 @@ async def get_tools(user=Depends(get_verified_user)):
 
 @router.get("/list", response_model=list[ToolUserResponse])
 async def get_tool_list(user=Depends(get_verified_user)):
+    """
+    Retrieve a list of tools available to the user.
+    Admin users get all tools, while regular users get tools they have write access to.
+    """
     if user.role == "admin":
         tools = Tools.get_tools()
     else:
@@ -54,6 +62,10 @@ async def get_tool_list(user=Depends(get_verified_user)):
 
 @router.get("/export", response_model=list[ToolModel])
 async def export_tools(user=Depends(get_admin_user)):
+    """
+    Export a list of all tools.
+    Only accessible by admin users.
+    """
     tools = Tools.get_tools()
     return tools
 
@@ -69,6 +81,10 @@ async def create_new_tools(
     form_data: ToolForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Create a new tool.
+    Only accessible by admin users or users with the appropriate permissions.
+    """
     if user.role != "admin" and not has_permission(
         user.id, "workspace.knowledge", request.app.state.config.USER_PERMISSIONS
     ):
@@ -130,6 +146,10 @@ async def create_new_tools(
 
 @router.get("/id/{id}", response_model=Optional[ToolModel])
 async def get_tools_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve a tool by its ID.
+    Only accessible by admin users, the tool owner, or users with read access.
+    """
     tools = Tools.get_tool_by_id(id)
 
     if tools:
@@ -158,6 +178,10 @@ async def update_tools_by_id(
     form_data: ToolForm,
     user=Depends(get_verified_user),
 ):
+    """
+    Update a tool by its ID.
+    Only accessible by the tool owner or admin users.
+    """
     tools = Tools.get_tool_by_id(id)
     if not tools:
         raise HTTPException(
@@ -215,6 +239,10 @@ async def update_tools_by_id(
 async def delete_tools_by_id(
     request: Request, id: str, user=Depends(get_verified_user)
 ):
+    """
+    Delete a tool by its ID.
+    Only accessible by the tool owner or admin users.
+    """
     tools = Tools.get_tool_by_id(id)
     if not tools:
         raise HTTPException(
@@ -244,6 +272,9 @@ async def delete_tools_by_id(
 
 @router.get("/id/{id}/valves", response_model=Optional[dict])
 async def get_tools_valves_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve the valves of a tool by its ID.
+    """
     tools = Tools.get_tool_by_id(id)
     if tools:
         try:
@@ -270,6 +301,9 @@ async def get_tools_valves_by_id(id: str, user=Depends(get_verified_user)):
 async def get_tools_valves_spec_by_id(
     request: Request, id: str, user=Depends(get_verified_user)
 ):
+    """
+    Retrieve the specification of the valves of a tool by its ID.
+    """
     tools = Tools.get_tool_by_id(id)
     if tools:
         if id in request.app.state.TOOLS:
@@ -298,6 +332,9 @@ async def get_tools_valves_spec_by_id(
 async def update_tools_valves_by_id(
     request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
 ):
+    """
+    Update the valves of a tool by its ID.
+    """
     tools = Tools.get_tool_by_id(id)
     if not tools:
         raise HTTPException(
@@ -337,6 +374,9 @@ async def update_tools_valves_by_id(
 
 @router.get("/id/{id}/valves/user", response_model=Optional[dict])
 async def get_tools_user_valves_by_id(id: str, user=Depends(get_verified_user)):
+    """
+    Retrieve the user-specific valves of a tool by its ID.
+    """
     tools = Tools.get_tool_by_id(id)
     if tools:
         try:
@@ -358,6 +398,9 @@ async def get_tools_user_valves_by_id(id: str, user=Depends(get_verified_user)):
 async def get_tools_user_valves_spec_by_id(
     request: Request, id: str, user=Depends(get_verified_user)
 ):
+    """
+    Retrieve the specification of the user-specific valves of a tool by its ID.
+    """
     tools = Tools.get_tool_by_id(id)
     if tools:
         if id in request.app.state.TOOLS:
@@ -381,6 +424,9 @@ async def get_tools_user_valves_spec_by_id(
 async def update_tools_user_valves_by_id(
     request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
 ):
+    """
+    Update the user-specific valves of a tool by its ID.
+    """
     tools = Tools.get_tool_by_id(id)
 
     if tools:
